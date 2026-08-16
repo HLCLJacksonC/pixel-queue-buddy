@@ -1,194 +1,68 @@
-# Pixel Queue Buddy
+# PixelQueue
 
-# PixelQueue Product Spec
+A tiny pixel-art app that estimates café queue length and wait time from a photo.
 
-## 1. Product Name
+![PixelQueue preview](https://id-preview--cf62dda9-c239-4cd1-87a6-b9294e6bdab6.lovable.app)
 
-**PixelQueue**
+## What it does
 
-A cute pixel-art computer vision app that estimates café queue length and wait time from an uploaded image.
+1. Upload a photo of a café line.
+2. Pick what people are queueing for (coffee, boba, sandwich, pastry, or a custom item).
+3. The app counts the people in line and estimates the wait based on typical service time.
+4. You get a cute pixel-art queue report with a vibe check.
 
----
+## Tech stack
 
-## 2. One-Sentence Pitch
+- **Framework:** [TanStack Start](https://tanstack.com/start) (React + full-stack TypeScript)
+- **Styling:** Tailwind CSS with a custom pixel-art theme
+- **AI / computer vision:** [Lovable AI Gateway](https://docs.lovable.dev/features/cloud) — `google/gemini-3.6-flash` vision model
+- **Fonts:** Press Start 2P, VT323
 
-PixelQueue turns a real café queue photo into a cute pixel-style queue visualization, showing how many people are waiting and how long the wait might be.
+## How the image recognition works
 
----
+When you click **Analyze Queue**, the browser sends the uploaded image (as a base64 data URL) to a TanStack Start server function at `src/lib/analyze.functions.ts`. That function calls the Lovable AI Gateway chat/completions endpoint with a vision prompt:
 
-## 3. Goal
+- System prompt: "You are a computer-vision queue analyst. Count only people who appear to be waiting in line."
+- User message: the photo + instructions to return strict JSON with `people_count`, `confidence`, and `summary`.
 
-Build a small hackathon demo that shows how computer vision can analyze a real-world queue and convert it into a fun, readable, pixel-art interface.
+The server function parses the JSON, calculates the estimated wait (`people_count × service_time_seconds`), and returns the report to the UI.
 
-The app should feel like a tiny game UI, not a serious enterprise dashboard.
+## Can the backend be changed?
 
----
+Yes, but with one important constraint: this project is built for an edge/serverless runtime (Cloudflare Workers). That means you **cannot** run a traditional Python/FastAPI server or load local ML models like YOLO directly inside the app.
 
-## 4. Core User Story
+Realistic alternatives:
 
-As a café customer or café operator, I want to upload a photo of a line so that I can quickly understand:
-
-- how many people are in the queue
-
-- how long the estimated wait is
-
-- how busy the café is
-
-- what product people may be waiting for
-
----
-
-## 5. MVP Scope
-
-The MVP should support:
-
-1. Uploading a café queue image
-
-2. Sending the image to a FastAPI backend
-
-3. Detecting people in the image
-
-4. Counting the number of people
-
-5. Estimating wait time based on product type
-
-6. Returning structured JSON to the frontend
-
-7. Rendering the result as a cute pixel-art queue
-
----
-
-## 6. Non-Goals
-
-Do not build these in the first version:
-
-- user accounts
-
-- database
-
-- real-time surveillance camera integration
-
-- advanced queue tracking
-
-- payment system
-
-- mobile app
-
-- model training from scratch
-
-- complex admin dashboard
-
----
-
-## 7. Tech Stack
-
-### Frontend
-
-- React
-
-- Vite
-
-- TypeScript
-
-- Tailwind CSS
-
-### Backend
-
-- Python
-
-- FastAPI
-
-- OpenCV
-
-- YOLO or another pretrained person detection model
-
-### Optional
-
-- OpenAI or DeepSeek API for generating a cute natural-language summary
-
-- Sample image collection for testing
-
----
-
-## 8. App Pages
-
-### Main Page
-
-The app can be a single-page app.
-
-It should include:
-
-- PixelQueue title
-
-- short tagline
-
-- image upload area
-
-- product selector
-
-- analyze button
-
-- result panel
-
-- pixel queue visualization
-
-- optional original image preview
-
----
-
-## 9. Product Selector
-
-The user should be able to choose what the line is for.
-
-Initial product options:
-
-- Coffee
-
-- Boba
-
-- Sandwich
-
-- Pastry
-
-- Custom
-
-Each product type has a default average service time.
-
-Example values:
-
-```ts
-
-const PRODUCT_SERVICE_TIMES = {
-
-  coffee: 120,
-
-  boba: 180,
-
-  sandwich: 90,
-
-  pastry: 60,
-
-  custom: 120
-
-};
-
-This project was built with [Lovable](https://lovable.dev).
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/cf62dda9-c239-4cd1-87a6-b9294e6bdab6).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+- **Keep the current approach** — vision model via Lovable AI Gateway (no setup, pay-per-use).
+- **Call an external Python API** — host a FastAPI + OpenCV/YOLO service elsewhere and have the TanStack server function call it over HTTP.
+- **Use a managed vision API** — e.g. Google Vision, Azure AI Vision, AWS Rekognition, etc.
+- **Switch to a different gateway model** — any model supported by Lovable AI Gateway can be swapped in.
 
 ## Development
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+bun install
+bun run dev
 ```
+
+Open [http://localhost:8080](http://localhost:8080).
+
+## Project structure
+
+```text
+src/
+  lib/
+    queue.ts              # product types, service times, wait formatting
+    analyze.functions.ts  # server function that calls the vision model
+  routes/
+    index.tsx             # main PixelQueue UI
+  components/
+    PixelPerson.tsx       # procedural pixel-art person sprite
+    PixelQueueStrip.tsx   # pixel queue visualization
+  styles.css              # pixel-art design tokens & utilities
+```
+
+## Notes
+
+- The original product spec mentioned a Python/FastAPI backend with YOLO person detection. That was adapted to fit this edge-first stack.
+- Detection accuracy depends on the photo quality, angle, and how clearly people are separated in line.
