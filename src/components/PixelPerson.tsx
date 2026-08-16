@@ -24,7 +24,7 @@ const PALETTES = [
 type Props = { seed: number; scale?: number; bobbing?: boolean };
 
 export function PixelPerson({ seed, scale = 4, bobbing = true }: Props) {
-  const palette = PALETTES[seed % PALETTES.length];
+  const palette = PALETTES[seed % PALETTES.length]!;
   const colors: Record<string, string> = {
     H: palette.H,
     S: palette.S,
