@@ -33,7 +33,7 @@ function PixelQueuePage() {
 
   const analyze = useServerFn(analyzeQueue);
   const mutation = useMutation({
-    mutationFn: (vars: { imageDataUrl: string; product: ProductKey; customLabel?: string }) =>
+    mutationFn: (vars: { imageDataUrl: string; product: ProductKey; customLabel: string }) =>
       analyze({ data: vars }),
   });
   const result = mutation.data;
@@ -127,7 +127,7 @@ function PixelQueuePage() {
             mutation.mutate({
               imageDataUrl,
               product,
-              customLabel: customLabel || undefined,
+              customLabel,
             })
           }
           className="pixel-press font-pixel mt-8 flex w-full items-center justify-center gap-3 border-4 border-border bg-secondary px-4 py-4 text-[12px] text-secondary-foreground active:pixel-press-active disabled:opacity-50"
